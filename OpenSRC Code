@@ -1,0 +1,658 @@
+/*
+ * Created by SharpDevelop.
+ * User: Student
+ * Date: 16.06.2019
+ * Time: 17:12
+ * 
+ * To change this template use Tools | Options | Coding | Edit Standard Headers.
+ */
+using System;
+using System.Collections.Generic;
+using System.Drawing;
+using System.Windows.Forms;
+//пространство имен для подключения базы данных Access
+using System.Data.OleDb;
+using System.Data;
+//пространство имен для подключения базы данных Excel (используется дополнительный плагин NPOI.Excel)
+using NPOI.SS.UserModel;
+using NPOI.XSSF.UserModel;
+using NPOI.SS.Format;
+//
+using System.IO;
+using System.Diagnostics;
+namespace test4
+{
+	/// <summary>
+	/// Description of MainForm.
+	/// </summary>
+	public partial class MainForm : Form
+	{
+		//объявление используемых глобальных переменных
+		string filename, filename2, textcolumn, filepath2, filepath  ;
+		 int chk1, chk2, chkOneDB, chkSecondDB, chkAllDB, okryglenie, Value;
+		  double sizeofmatrix, GSD1, pixels, focus, HAFANadir, HAFAANGL, sizeofpixel, Ang ;
+
+		public MainForm()
+		{
+		InitializeComponent();
+		//состояние элементов при запуске программы
+			 openFileDialog1.Filter = "Файлы Базы Данных(*.mdb,*.xlsx,*.xls)|*.mdb;*.xlsx;*.xls";//фильтр расширения файлов
+			  textBox3.Text=("15");
+			   textBox2.Text=("1");
+			    textBox3.Enabled=false;
+			     label6.Visible=false;
+			      textBox1.Text=Convert.ToString("Выберите базу данных спутников");
+		           textBox4.Text=Convert.ToString("Выберите базу данных БПЛА");
+		            button2.Enabled=false;
+		             listBox4.Visible=false;
+		              label10.Visible=false;
+		               label11.Visible=false;
+		   
+			  }
+		
+		
+		
+		
+		void TextBox2KeyPress(object sender, KeyPressEventArgs e)
+		{
+			//ввод только цифр и ограничение диапазона градусов от 0 до 89
+			char number = e.KeyChar;
+			 if (!Char.IsDigit(number)&& number !=8)
+			    e.Handled = true;
+			     if (textBox2.Text=="")
+				    Value = Convert.ToInt32("0");
+			          else
+			             Value = Convert.ToInt32(textBox2.Text);
+			               if (((textBox2.Text.Length >= 2) && (Value < 0) || (Value > 89))||
+                              ((textBox2.Text.Length < 2) && ((Value < 1) || (Value > 8))))
+                                 textBox2.Clear();
+			
+			}
+		void TextBox3KeyPress(object sender, KeyPressEventArgs e)
+		{
+			//ввод только цифр
+			char number = e.KeyChar;
+			 if (!Char.IsDigit(number)&& number !=8)
+			     e.Handled = true;
+		}
+		
+		
+		
+		void Button4Click(object sender, EventArgs e)
+		{
+			//кнопка очищения результатов вычислений
+		   listBox2.Items.Clear();
+			listBox3.Items.Clear();
+			 listBox4.Items.Clear();	
+		}
+		// проверка чекбоксов и присваивание переменным (chk) значений 1 или 0
+		void CheckBox1CheckedChanged(object sender, EventArgs e)
+		{
+			if (checkBox1.Checked==true)
+			{
+			 chk1=1;
+		      textBox3.Enabled=true;
+			}
+			else
+			{
+			 chk1=0;
+			  textBox3.Enabled=false;
+			}
+		}
+		
+		void CheckBox2CheckedChanged(object sender, EventArgs e)
+		{
+			if (checkBox2.Checked==true)
+			{
+			 chk2=1;
+			  label6.Visible=true;
+			   listBox4.Visible=true;
+			}
+			else
+			{
+			 chk2=0;
+			  label6.Visible=false;
+			   listBox4.Visible=false;
+			}
+		}
+		
+	void RadioButton1CheckedChanged(object sender, EventArgs e)
+		{
+			if (radioButton1.Checked==true)
+			    chkOneDB=1;
+			else
+			chkOneDB=0;	
+			if ((radioButton1.Checked==true)&&(textBox1.Text==Convert.ToString("Выберите базу данных спутников")))
+				button2.Enabled=false;
+			else
+				button2.Enabled=true;	
+		}
+	
+			void RadioButton2CheckedChanged(object sender, EventArgs e)
+		{
+		if (radioButton2.Checked==true)
+			chkSecondDB=1;
+		
+		else
+			chkSecondDB=0;	
+                if ((radioButton2.Checked==true)&&(textBox4.Text==Convert.ToString("Выберите базу данных БПЛА")))
+				button2.Enabled=false;
+				else
+				button2.Enabled=true;	
+		}
+		
+			void RadioButton3CheckedChanged(object sender, EventArgs e)
+		{
+		if (radioButton3.Checked==true)
+			chkAllDB=1;
+		else
+		    chkAllDB=0;	
+		if ((radioButton3.Checked==true)&&(textBox4.Text==Convert.ToString("Выберите базу данных БПЛА"))&&(textBox1.Text==Convert.ToString("Выберите базу данных спутников")))
+		   button2.Enabled=false;
+		else
+		   button2.Enabled=true;				
+		}
+		//открытие файла первой БД
+		void Button1Click(object sender, EventArgs e)
+		{
+		
+        if (openFileDialog1.ShowDialog() == DialogResult.Cancel)
+            return; 
+        filename = openFileDialog1.FileName;
+         string fileText = System.IO.File.ReadAllText(filename);
+          textBox1.Text = filename;
+           filepath=Path.GetExtension(filename);
+         if (filepath==".mdb")
+        	button2.Enabled=true;
+        		else if(filepath==".xls")
+        		button2.Enabled=true;
+        			else if(filepath==".xlsx")
+        			button2.Enabled=true;
+        				else
+        	button2.Enabled=false;
+       
+		}
+		//открытие файла второй БД
+		void Button3Click(object sender, EventArgs e)
+		{
+ if (openFileDialog2.ShowDialog() == DialogResult.Cancel)
+            return; 
+        filename2 = openFileDialog2.FileName;
+         string fileText = System.IO.File.ReadAllText(filename2);
+          textBox4.Text = filename2;
+           filepath2=Path.GetExtension(filename2);
+        if (filepath2==".mdb")
+        	button2.Enabled=true;
+        		else if(filepath2==".xls")
+        		button2.Enabled=true;
+        			else if(filepath2==".xlsx")
+        			button2.Enabled=true;
+        				else
+        	button2.Enabled=false;
+		}
+	
+		void Button2Click(object sender, EventArgs e)
+		{	
+			
+			chk1=1;
+			if (textBox3.Text=="")
+			{label11.Visible=true;
+				chk1=0;}
+				else
+					label11.Visible=false;
+				
+			if (textBox2.Text=="")
+				label10.Visible=true;
+			else
+			{
+				label10.Visible=false;
+			
+			if (chkOneDB==1)                                                                               //для первого чекпоинта (RadioButton1)
+		{
+		{
+			if (filepath==".mdb")
+			{
+			
+			   
+			OleDbConnection thisConnection = new OleDbConnection(@"Provider=Microsoft.Jet.OLEDB.4.0;Data Source =" +filename) ;
+			                                                    
+			thisConnection.Open();
+			string query = "SELECT Name_FLY, f, M, lx, H  FROM Characters ";
+			OleDbCommand command = new OleDbCommand(query, thisConnection);
+			OleDbDataReader reader = command.ExecuteReader();
+			listBox2.Items.Clear();
+			listBox3.Items.Clear();
+			listBox4.Items.Clear();
+			while (reader.Read())
+			{
+				pixels=Convert.ToDouble(reader["lx"]);
+				focus=Convert.ToInt32(reader["f"]);
+				HAFANadir=(Convert.ToInt32(reader["H"])*1000);
+				
+				Ang=(Convert.ToInt32(textBox2.Text)/((180/Math.PI)));
+				HAFAANGL=(HAFANadir/(Math.Cos(Ang)));
+				
+				sizeofmatrix=Convert.ToInt32(reader["M"]);
+			    sizeofpixel=pixels/sizeofmatrix;
+		
+			    if (chk1==1)
+			{
+			    okryglenie=Convert.ToInt32(textBox3.Text);
+			    if (okryglenie >=15)
+			    	okryglenie=15;
+			    GSD1 = Math.Round(((sizeofpixel*HAFAANGL)/focus),okryglenie) ;
+			    }
+			    else   
+			    {
+			    	GSD1=(sizeofpixel*HAFAANGL)/focus ;
+			    }
+			    if (chk2==1)
+			    {
+			    	listBox2.Items.Add(Convert.ToString(reader[0]));
+			    	listBox3.Items.Add(Convert.ToString(GSD1));
+			    	listBox4.Items.Add(Convert.ToString(Math.Round(sizeofpixel,5)));
+			    }
+			    
+			    else
+			    {
+			    	listBox2.Items.Add(Convert.ToString(reader[0]));
+			    	listBox3.Items.Add(Convert.ToString(GSD1));
+			    }
+			   }
+			
+			reader.Close();
+			thisConnection.Close();
+		}
+		else	
+		{{
+			listBox2.Items.Clear();
+			listBox3.Items.Clear();
+			listBox4.Items.Clear();
+		 //Книга Excel
+            XSSFWorkbook xssfwb;
+            xssfwb = new XSSFWorkbook(filename);
+            //Получаем первый лист книги
+            ISheet sheet = xssfwb.GetSheetAt(0);
+            //запускаем цикл по строкам
+            for (int row = 1; row <= sheet.LastRowNum; row++)
+            {
+                //получаем строку
+                var currentRow = sheet.GetRow(row);
+                if (currentRow != null) //null когда строка содержит только пустые ячейки
+                {
+                    //запускаем цикл по столбцам
+                    for (int column = 0; column <6; column++)
+                    {                    
+                        //получаем значение ячейки
+                        var stringCellValue = currentRow.GetCell(column);
+                        //Выводим сообщение
+                        if ( stringCellValue != null) 
+                        {
+                        	if (column==0)
+                        textcolumn=(string.Format("{0}",stringCellValue));
+                        if (column==2)
+                        	focus=Convert.ToInt32(string.Format("{0}",stringCellValue));
+                        if (column==3)
+                        	HAFANadir=((Convert.ToInt32(string.Format("{0}",stringCellValue)))*1000);
+                        if (column==4)
+                        	sizeofmatrix=Convert.ToInt32(string.Format("{0}",stringCellValue));
+                        if (column==5)
+                        { pixels=Convert.ToDouble(string.Format("{0}",stringCellValue));
+                        Ang=(Convert.ToInt32(textBox2.Text)/((180/Math.PI)));
+                        HAFAANGL=(HAFANadir/(Math.Cos(Ang)));
+			            sizeofpixel=pixels/sizeofmatrix;
+		
+			    if (chk1==1)
+			{
+			    okryglenie=Convert.ToInt32(textBox3.Text);
+			    if (okryglenie >=15)
+			    	okryglenie=15;
+			    GSD1 = Math.Round(((sizeofpixel*HAFAANGL)/focus),okryglenie) ;
+			    }
+			    else   
+			    {
+			    	GSD1=(sizeofpixel*HAFAANGL)/focus ;
+			    }
+			  if (chk2==1)
+			    {
+			    	listBox2.Items.Add(textcolumn);
+			    	listBox3.Items.Add(Convert.ToString(GSD1));
+			    	listBox4.Items.Add(Convert.ToString(Math.Round(sizeofpixel,5)));
+			    }
+			    
+			    else
+			    {
+			    	listBox2.Items.Add(textcolumn);
+			    	listBox3.Items.Add(Convert.ToString(GSD1));
+			    }}}}}}}}}}
+		if (chkSecondDB==1)                                                                                    //для второго чекпоинта(RadioButton2)
+		{
+	    
+			if (filepath2==".mdb")
+			{
+			
+			   
+			OleDbConnection thisConnection = new OleDbConnection(@"Provider=Microsoft.Jet.OLEDB.4.0;Data Source =" +filename2) ;
+			                                                    
+			thisConnection.Open();
+			string query = "SELECT Name_FLY, f, M, lx, H  FROM Characters ";
+			OleDbCommand command = new OleDbCommand(query, thisConnection);
+			OleDbDataReader reader = command.ExecuteReader();
+			listBox2.Items.Clear();
+			listBox3.Items.Clear();
+			listBox4.Items.Clear();
+			while (reader.Read())
+			{
+				pixels=Convert.ToDouble(reader["lx"]);
+				focus=Convert.ToInt32(reader["f"]);
+				HAFANadir=Convert.ToInt32(reader["H"]);
+				
+				Ang=(Convert.ToInt32(textBox2.Text)/((180/Math.PI)));
+				HAFAANGL=((HAFANadir/(Math.Cos(Ang)))*1000);
+				
+				sizeofmatrix=Convert.ToInt32(reader["M"]);
+			    sizeofpixel=pixels/sizeofmatrix;
+		
+			    if (chk1==1)
+			{
+			    okryglenie=Convert.ToInt32(textBox3.Text);
+			    if (okryglenie >=15)
+			    	okryglenie=15;
+			    GSD1 = Math.Round(((sizeofpixel*HAFAANGL)/focus),okryglenie) ;
+			    }
+			    else   
+			    {
+			    	GSD1=(sizeofpixel*HAFAANGL)/focus ;
+			    }
+			   if (chk2==1)
+			    {
+			    	listBox2.Items.Add(Convert.ToString(reader[0]));
+			    	listBox3.Items.Add(Convert.ToString(GSD1));
+			    	listBox4.Items.Add(Convert.ToString(Math.Round(sizeofpixel,5)));
+			    }
+			    
+			    else
+			    {
+			    	listBox2.Items.Add(Convert.ToString(reader[0]));
+			    	listBox3.Items.Add(Convert.ToString(GSD1));
+			    }
+			}
+			reader.Close();
+			thisConnection.Close();
+		}
+		else	
+		{{
+			listBox2.Items.Clear();
+			listBox3.Items.Clear();
+			listBox4.Items.Clear();
+            XSSFWorkbook xssfwb;
+            xssfwb = new XSSFWorkbook(filename2);
+            ISheet sheet = xssfwb.GetSheetAt(0);
+            for (int row = 1; row <= sheet.LastRowNum; row++)
+            {
+                var currentRow = sheet.GetRow(row);
+                if (currentRow != null) 
+                {
+                    for (int column = 0; column <6; column++)
+                    {                    
+                        var stringCellValue = currentRow.GetCell(column);
+                        if ( stringCellValue != null) 
+                        {
+                        	if (column==0)
+                        textcolumn=(string.Format("{0}",stringCellValue));
+                        if (column==2)
+                        	focus=Convert.ToInt32(string.Format("{0}",stringCellValue));
+                        if (column==3)
+                        	HAFANadir=((Convert.ToInt32(string.Format("{0}",stringCellValue)))*1000);
+                        if (column==4)
+                        	sizeofmatrix=Convert.ToInt32(string.Format("{0}",stringCellValue));
+                        if (column==5)
+                        { pixels=Convert.ToDouble(string.Format("{0}",stringCellValue));
+                        Ang=(Convert.ToInt32(textBox2.Text)/((180/Math.PI)));
+                        HAFAANGL=(HAFANadir/(Math.Cos(Ang)));
+				
+				
+			    sizeofpixel=pixels/sizeofmatrix;
+		
+			    if (chk1==1)
+			{
+			    okryglenie=Convert.ToInt32(textBox3.Text);
+			    if (okryglenie >=15)
+			    	okryglenie=15;
+			    GSD1 = Math.Round(((sizeofpixel*HAFAANGL)/focus),okryglenie) ;
+			    }
+			    else   
+			    {
+			    	GSD1=(sizeofpixel*HAFAANGL)/focus ;
+			    }
+			    if (chk2==1)
+			    {
+			    	listBox2.Items.Add(textcolumn);
+			    	listBox3.Items.Add(Convert.ToString(GSD1));
+			    	listBox4.Items.Add(Convert.ToString(Math.Round(sizeofpixel,5)));
+			    }
+			    
+			    else
+			    {
+			    	listBox2.Items.Add(textcolumn);
+			    	listBox3.Items.Add(Convert.ToString(GSD1));
+			    }}}}}}}}}
+			
+		if (chkAllDB == 1)                                                                              //для третьего чекпоинта(RadioButton3)
+		{
+			{
+			if (filepath==".mdb")
+			{
+			
+			   
+			OleDbConnection thisConnection = new OleDbConnection(@"Provider=Microsoft.Jet.OLEDB.4.0;Data Source =" +filename) ;
+			                                                    
+			thisConnection.Open();
+			string query = "SELECT Name_FLY, f, M, lx, H  FROM Characters ";
+			OleDbCommand command = new OleDbCommand(query, thisConnection);
+			OleDbDataReader reader = command.ExecuteReader();
+			listBox2.Items.Clear();
+			listBox3.Items.Clear();
+			listBox4.Items.Clear();
+			while (reader.Read())
+			{
+				pixels=Convert.ToDouble(reader["lx"]);
+				focus=Convert.ToInt32(reader["f"]);
+				HAFANadir=Convert.ToInt32(reader["H"]);
+				
+				Ang=(Convert.ToInt32(textBox2.Text)/((180/Math.PI)));
+				HAFAANGL=((HAFANadir/(Math.Cos(Ang)))*1000);
+				
+				sizeofmatrix=Convert.ToInt32(reader["M"]);
+			    sizeofpixel=pixels/sizeofmatrix;
+		
+			    if (chk1==1)
+			{
+			    okryglenie=Convert.ToInt32(textBox3.Text);
+			    if (okryglenie >=15)
+			    	okryglenie=15;
+			    GSD1 = Math.Round(((sizeofpixel*HAFAANGL)/focus),okryglenie) ;
+			    }
+			    else   
+			    {
+			    	GSD1=(sizeofpixel*HAFAANGL)/focus ;
+			    }
+			   if (chk2==1)
+			    {
+			    	listBox2.Items.Add(Convert.ToString(reader[0]));
+			    	listBox3.Items.Add(Convert.ToString(GSD1));
+			    	listBox4.Items.Add(Convert.ToString(Math.Round(sizeofpixel,5)));
+			    }
+			    
+			    else
+			    {
+			    	listBox2.Items.Add(Convert.ToString(reader[0]));
+			    	listBox3.Items.Add(Convert.ToString(GSD1));
+			    }
+			}
+			reader.Close();
+			thisConnection.Close();
+		
+		}
+		else	
+		{{
+			listBox2.Items.Clear();
+			listBox3.Items.Clear();
+			listBox4.Items.Clear();
+            XSSFWorkbook xssfwb;
+            xssfwb = new XSSFWorkbook(filename);
+            ISheet sheet = xssfwb.GetSheetAt(0);
+            for (int row = 1; row <= sheet.LastRowNum; row++)
+            {
+                var currentRow = sheet.GetRow(row);
+                if (currentRow != null) 
+                {
+                    for (int column = 0; column <6; column++)
+                    {                  
+                        var stringCellValue = currentRow.GetCell(column);
+                        if ( stringCellValue != null) 
+                        {
+                        	if (column==0)
+                        textcolumn=(string.Format("{0}",stringCellValue));
+                        if (column==2)
+                        	focus=Convert.ToInt32(string.Format("{0}",stringCellValue));
+                        if (column==3)
+                        	HAFANadir=((Convert.ToInt32(string.Format("{0}",stringCellValue)))*1000);
+                        if (column==4)
+                        	sizeofmatrix=Convert.ToInt32(string.Format("{0}",stringCellValue));
+                        if (column==5)
+                        { pixels=Convert.ToDouble(string.Format("{0}",stringCellValue));
+                        Ang=(Convert.ToInt32(textBox2.Text)/((180/Math.PI)));
+                        HAFAANGL=(HAFANadir/(Math.Cos(Ang)));
+				
+				
+			    sizeofpixel=pixels/sizeofmatrix;
+		
+			    if (chk1==1)
+			{
+			    okryglenie=Convert.ToInt32(textBox3.Text);
+			    if (okryglenie >=15)
+			    	okryglenie=15;
+			    GSD1 = Math.Round(((sizeofpixel*HAFAANGL)/focus),okryglenie) ;
+			    }
+			    else   
+			    {
+			    	GSD1=(sizeofpixel*HAFAANGL)/focus ;
+			    }
+			   if (chk2==1)
+			    {
+			    	listBox2.Items.Add(textcolumn);
+			    	listBox3.Items.Add(Convert.ToString(GSD1));
+			    	listBox4.Items.Add(Convert.ToString(Math.Round(sizeofpixel,5)));
+			    }
+			    
+			    else
+			    {
+			    	listBox2.Items.Add(textcolumn);
+			    	listBox3.Items.Add(Convert.ToString(GSD1));
+			    }}}}}}}}}
+			
+		if (filepath2==".mdb")
+		{
+			OleDbConnection thisConnection = new OleDbConnection(@"Provider=Microsoft.Jet.OLEDB.4.0;Data Source =" +filename2) ;
+			                                                    
+			thisConnection.Open();
+			string query = "SELECT Name_FLY, f, M, lx, H  FROM Characters ";
+			OleDbCommand command = new OleDbCommand(query, thisConnection);
+			OleDbDataReader reader = command.ExecuteReader();
+			
+			while (reader.Read())
+			{
+				pixels=Convert.ToDouble(reader["lx"]);
+				focus=Convert.ToInt32(reader["f"]);
+				HAFANadir=Convert.ToInt32(reader["H"]);
+				
+				Ang=(Convert.ToInt32(textBox2.Text)/((180/Math.PI)));
+				HAFAANGL=((HAFANadir/(Math.Cos(Ang)))*1000);
+				
+				sizeofmatrix=Convert.ToInt32(reader["M"]);
+			    sizeofpixel=pixels/sizeofmatrix;
+		
+			    if (chk1==1)
+			{
+			    okryglenie=Convert.ToInt32(textBox3.Text);
+			    if (okryglenie >=15)
+			    	okryglenie=15;
+			    GSD1 = Math.Round(((sizeofpixel*HAFAANGL)/focus),okryglenie) ;
+			    }
+			    else   
+			    {
+			    	GSD1=(sizeofpixel*HAFAANGL)/focus ;
+			    }
+			    if (chk2==1)
+			    {
+			    	listBox2.Items.Add(Convert.ToString(reader[0]));
+			    	listBox3.Items.Add(Convert.ToString(GSD1));
+			    	listBox4.Items.Add(Convert.ToString(Math.Round(sizeofpixel,5)));
+			    }
+			    
+			    else
+			    {
+			    	listBox2.Items.Add(Convert.ToString(reader[0]));
+			    	listBox3.Items.Add(Convert.ToString(GSD1));
+			    }
+			}
+			
+			reader.Close();
+			thisConnection.Close();	
+		}
+		else	
+		{{
+			
+		 
+            XSSFWorkbook xssfwb;
+            xssfwb = new XSSFWorkbook(filename2);
+            ISheet sheet = xssfwb.GetSheetAt(0);
+            for (int row = 1; row <= sheet.LastRowNum; row++)
+            {
+                var currentRow = sheet.GetRow(row);
+                if (currentRow != null) 
+                {
+                    for (int column = 0; column <6; column++)
+                    {                    
+                        var stringCellValue = currentRow.GetCell(column);
+                        if ( stringCellValue != null) 
+                        {
+                        	if (column==0)
+                        textcolumn=(string.Format("{0}",stringCellValue));
+                        if (column==2)
+                        	focus=Convert.ToInt32(string.Format("{0}",stringCellValue));
+                        if (column==3)
+                        	HAFANadir=((Convert.ToInt32(string.Format("{0}",stringCellValue)))*1000);
+                        if (column==4)
+                        	sizeofmatrix=Convert.ToInt32(string.Format("{0}",stringCellValue));
+                        if (column==5)
+                        { pixels=Convert.ToDouble(string.Format("{0}",stringCellValue));
+                        Ang=(Convert.ToInt32(textBox2.Text)/((180/Math.PI)));
+                        HAFAANGL=(HAFANadir/(Math.Cos(Ang)));
+			            sizeofpixel=pixels/sizeofmatrix;
+		
+			    if (chk1==1)
+			{
+			    okryglenie=Convert.ToInt32(textBox3.Text);
+			    if (okryglenie >=15)
+			    	okryglenie=15;
+			    GSD1 = Math.Round(((sizeofpixel*HAFAANGL)/focus),okryglenie) ;
+			    }
+			    else   
+			    {
+			    	GSD1=(sizeofpixel*HAFAANGL)/focus ;
+			    }
+			    if (chk2==1)
+			    {
+			    	listBox2.Items.Add(textcolumn);
+			    	listBox3.Items.Add(Convert.ToString(GSD1));
+			    	listBox4.Items.Add(Convert.ToString(Math.Round(sizeofpixel,5)));
+			    }
+			    
+			    else
+			    {
+			    	listBox2.Items.Add(textcolumn);
+			    	listBox3.Items.Add(Convert.ToString(GSD1));
+			    }}}}}}}}}}}}}
+	
